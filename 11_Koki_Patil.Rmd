@@ -1,0 +1,631 @@
+---
+title: "Pandemic Perspectives: The Impact of Cultural Dimensions on Happiness Amidst COVID-19"
+author: "Tejesh Reddy Koki and Aishwarya Patil"
+date: "R - Bootcamp Delivarable on 23.02.2024"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+pdf document: default
+editor_options:
+  chunk_output_type: inline
+  always_allow_html: yes
+---
+
+```{r knitr-setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+--------------------------------------------------------------------------------
+
+### Table of Contents
+
+[1- Introduction]
+
+[2- Motivation]
+
+[3- Aims and Hypothesis]
+
+[4- Procedure with R]
+
+[4-1 The Required packages and Libraries]
+
+[4-2 Data Sources]
+
+[4-3 Data Retreival and Preprocessing]
+
+[4-4 World Health and Cultural Data Preparation]
+
+[4-5 COVID Data Preparation and Merge Datasets]
+
+[5- World Health, Cultural and COVID Data Analysis]
+
+[5-1  Data Modeling]
+
+[5-2 Hypothesis 1 Analysis]
+
+[5-3 Hypothesis 2  Analysis (Chapter of Choice)]
+
+[5-4 Hypothesis 3 Analysis]
+
+[6- Use of GENAI ]
+
+[7- Conclusion ]
+
+[8- Sources]
+
+--------------------------------------------------------------------------------
+
+### 1- Introduction
+
+In recent years, the world has faced one of its most severe challenges: a pandemic that has not only caused tremendous socioeconomic changes but also resulted in the widespread shutdown of educational institutions around the world. This era of turbulence has prompted an intriguing observation: despite the disease's worldwide threat, governments around the world have exhibited extraordinary resilience, implementing novel solutions that go beyond simple safety precautions. At the heart of this resilience is a profound interaction of culture, solidarity, and compassion, motivating more investigation into how cultural foundations can profoundly influence a country's response to disasters.
+
+In order to portray a more complete picture, we sought insights from the World Happiness Report, the data that evaluates countries based on their Life Ladder scores. This score, generated from a variety of elements, provides a picture of the nation's overall well-being and happiness levels, allowing better understanding of how culture, happiness, and the collective response to the pandemic interact.
+ 
+In this project, we are analysing how happiness, COVID-19, and cultural traits are correlated. We want to know if the virus affected how happy people feel and whether cultural differences play a role. Our goal is to provide valuable insights for decision-makers, like leaders and policymakers, understand these connections better.
+
+In our research, we investigate the enormous implications of culture on resilience, togetherness, and happiness throughout the epidemic in India, Switzerland, Finland, and China.
+In the following sections, we will describe the data sources, methods, and results of our analysis, with a focus on providing a clear and comprehensive narrative that is easy to follow and understand.
+
+--------------------------------------------------------------------------------
+
+### 2- Motivation
+
+The rationale for choosing this topic originates from our individual experiences living in India and Switzerland. The significant cultural differences between these two nations peaked our interest, especially during the COVID-19 outbreak. Observing the different measures each country took in reaction to the crisis prompted us to conduct further research and better understand the influence of culture in defining their COVID-19 initiatives. Our lived experiences in these varied contexts motivate our desire to learn more and share insights about how cultural differences influence a country's response to the pandemic.
+
+--------------------------------------------------------------------------------
+
+### 3- Aims and Hypothesis
+
+**Aims**
+
+1.	Understanding COVID-19's Impact on Global Happiness:
+Objective: To examine worldwide happiness trends using World Happiness Report data, with a specific emphasis on changes during the pre-COVID, COVID, and post-	COVID eras.
+
+2.	Examining the Role of Cultural Dimensions in Pandemic Responses:
+Objective: To delves into how cultural factors influence a society's response to the 	pandemic and the ensuing impact on happiness.
+
+3.	Identifying Patterns and Anomalies in Happiness Scores:
+Objective: To identify consistent patterns or notable deviations in happiness scores relation to COVID-19 statistics.
+
+
+**Hypothesis**
+
+1.	Impact of Pandemic on Happiness: The happiness scores significantly decreased during the peak of the COVID-19 pandemic and showed signs of recovery in the post-pandemic phase.
+
+2.	Cultural Influence on Pandemic Response: Countries with high scores in certain cultural dimensions (like Collectivism or Uncertainty Avoidance) experienced a different impact on their happiness scores due to their unique responses to the pandemic.
+
+3.	Correlation between COVID-19 Severity and Happiness Scores: There is a negative correlation between the severity of COVID-19 in a country (measured by infection and death rates) and its happiness score.
+
+
+--------------------------------------------------------------------------------
+
+### 4- Procedure with R
+
+In this chapter we will look into installing libraries, loading and merging data.
+
+#### 4-1 The Required packages and Libraries
+
+```{r message=FALSE, warning=FALSE, results='hide'}
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(countrycode)
+library(plotly)
+library(maps)
+library(ggplot2)
+library(lubridate)
+library(countrycode)
+library(maps)
+library(shiny)
+library(patchwork)
+library(tinytex)
+
+```
+
+--------------------------------------------------------------------------------
+
+#### 4-2 Data Sources
+
+We relied mostly on publicly available data for this study. Our most important duo datasets are World Happiness data and Cultural Dimension data.We took COVID data as secondary data to examine how the world happiness influences situations like pandemic. Happiness data is taken from its official website World Happiness Report.org, 
+
+Hofstede Cultural dimennsion data is taken from official Hofstede Insights.It is a framework that measures and compares cultural aspects across different countries. It includes six dimensions which provide insights into how societies differ in terms of values, behaviors, and social norms, aiding the understanding of cultural variations on a global scale.
+
+Lastly we have taken the pandemic data from Kaggle, which provided insights into the pandemic's timeline and global impact.
+
+--------------------------------------------------------------------------------
+
+#### 4-3 Data Retreival and Preprocessing
+
+```{r Reading_Data, message=FALSE, warning=FALSE, include=FALSE, results='hide'}
+whr_data <- read.csv("C:/Users/kokit/OneDrive - Hochschule Luzern/Study Docuemnts/Block Week/R Bootcamp/Datasets/WHR_Dataset.csv")
+
+covid_data <- read.csv("C:/Users/kokit/OneDrive - Hochschule Luzern/Study Docuemnts/Block Week/R Bootcamp/Datasets/WHO-COVID-19-global-data.csv")
+
+cultural_data <- read.csv("C:/Users/kokit/OneDrive - Hochschule Luzern/Study Docuemnts/Block Week/R Bootcamp/Datasets/Cultural_Dimensions_Some_Countries.csv")
+
+```
+
+```{r datasummary, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+summary(whr_data)
+summary(covid_data)
+summary(cultural_data)
+```
+
+```{r}
+num_unique_countries_cultural = cultural_data %>% 
+  summarise(number = n_distinct(Country))
+
+num_unique_countries_covid = covid_data %>% 
+  summarise(number = n_distinct(Country))
+
+num_unique_countries_whr = whr_data %>%
+  summarise(number = n_distinct(Country.name))
+
+print(num_unique_countries_cultural )
+cat("\n")
+print(num_unique_countries_whr)
+cat("\n")
+print(num_unique_countries_covid)
+```
+In each dataset we have different number of countries. We first merged Cultural dimension dataset,this automatically drops the unmatched countries data from World Happiness dataset and COVID data. We try to focus primarily on the four countries namely-India, Switzerland, Finland and China. However for visualizations, we included 17  countries, few from each continent to draw better insights.
+
+
+
+--------------------------------------------------------------------------------
+
+#### 4-4 World Health and Cultural Data Preparation
+
+While merging we noticed that the Column names are not same in the two datasets,so we clean the data and merge by country. COVID dataset needs an additional cleaning to change the date format to year.
+```{r renaming_column, message=FALSE, warning=FALSE, results='hide'}
+#renaming the column names in whr_data to match other datasets
+whr_data <- rename(whr_data, Country = Country.name, Year=year)
+print(colnames(whr_data))
+```
+
+```{r mergingwhrculdata, echo=TRUE}
+
+print(names(whr_data))
+print(names(cultural_data))
+
+whr_cult_data <- merge(whr_data, cultural_data, by=c("Country", "Year"))
+head(whr_cult_data)
+```
+
+--------------------------------------------------------------------------------
+
+#### 4-5 COVID Data Preparation and Merge Datasets
+
+COVID dataset needs an additional cleaning to change the date format to year.
+
+```{r preprocess_coviddata, echo=TRUE}
+# Convert Date_reported to Date format
+covid_data$Date_reported <- as.Date(covid_data$Date_reported, format = "%d/%m/%Y")
+
+# Extract the year and create a new column
+covid_data$Year <- year(covid_data$Date_reported)
+
+# List of selected countries
+selected_countries <- c("Argentina", "Australia", "Brazil", "China", "Denmark", 
+                        "Egypt", "Finland", "Ghana", "Greece", "India", "Iran", 
+                        "Japan", "Nigeria", "Russia", "Switzerland", "United Kingdom", 
+                        "United States")
+filtered_covid_data <- covid_data %>%
+  filter(Country %in% selected_countries)
+#View(filtered_covid_data)
+```
+
+To enhance our analysis, it's essential to incorporate data from 2018 and 2019, simulating zero COVID cases and deaths for these years since the pandemic hadn't occurred yet. This addition allows us to create comprehensive visualizations that illustrate the impactful rise and subsequent decline of COVID cases in various countries.
+
+
+```{r generating_data, echo=TRUE, warning=FALSE}
+#Generating dates for 2018 and 2019 to defined countries.
+
+dt_18_19 <- seq(as.Date("2018-01-01"), as.Date("2019-12-31"), by="day")
+# Creating a template data frame for each country
+template_data <- expand.grid(Date_reported = dt_18_19,
+                             Country = selected_countries) %>%
+  mutate(New_cases = 0, Cumulative_cases = 0,
+         New_deaths = 0, Cumulative_deaths = 0)
+
+
+# Convert Date_reported to Date format
+template_data$Date_reported <- as.Date(template_data$Date_reported, format = "%Y-%m-%d")
+
+# Extract the year and create a new column
+template_data$Year <- year(template_data$Date_reported)
+
+final_covid_data <- bind_rows(filtered_covid_data, template_data)
+final_covid_data <- final_covid_data %>%
+  arrange(Country, Date_reported)
+
+```
+Now we have our final covid data as well.Now lets dive into data analysis .
+
+--------------------------------------------------------------------------------
+
+### 5- World Health, Cultural and COVID Data Analysis
+
+```{r LifeLadderScore across years, echo=FALSE, message=FALSE, warning=FALSE}
+whr_data$Country_Code <- countrycode(whr_data$Country, origin='country.name', destination = 'genc3c')
+fig <- plot_ly(whr_data, type='choropleth',locations=~Country_Code, z=~whr_data$Life.Ladder, text=~Country, colorscale='Viridis', frame = ~Year)
+
+fig <- fig %>% colorbar(
+  title = "Life Ladder Score")
+
+fig <- fig %>% layout(
+    title = "Countrywise Life Ladder Score"
+)
+fig
+```
+
+
+It is insightful to see  life ladder score  of all the countries changes from 2005 to 2022. However we are interested only in few countries namely- India,Switzerland, Finland and China.
+
+```{r}
+whr_cult_data$Country_Code <- countrycode(whr_cult_data$Country, origin='country.name', destination = 'genc3c')
+fig <- plot_ly(whr_cult_data, type='choropleth',locations=~Country_Code, z=~whr_cult_data$Life.Ladder, text=~Country, colorscale='Viridis', frame = ~Year)
+
+fig <- fig %>% colorbar(
+  title = "Ladder Score")
+
+fig <- fig %>% layout(
+    title = "Ladder Score by Country"
+)
+fig
+```
+
+With limited countries we can see precisely how the life ladder score has changed with time for these countries.To narrow down the analysis, we SUBSET our dataset and plot for Switzerland, India, Finland and China.
+
+#### 5-1  Data Modeling
+
+We create a linear regression model using the lm() function. This model is aimed at predicting the dependent variable Life.Ladder based on several independent variables, including Log.GDP.per.capita, Social.support, Healthy.life.expectancy.at.birth, Individualism, and Uncertainty.Avoidance. 
+```{r Linear Model, echo=TRUE,include=TRUE}
+# Create the linear model
+lm_model <- lm(Life.Ladder ~ Log.GDP.per.capita + Social.support + Healthy.life.expectancy.at.birth + Individualism + Uncertainty.Avoidance, data=whr_cult_data)
+
+# Display the summary of the model
+summary(lm_model)
+```
+
+
+**Statistical Significance of Variables:**
+
+The results of a linear regression above tells us the association between the Life Ladder, a measure of well-being or happiness, and various other factors, including log GDP per capita, social support, healthy life expectancy at birth, individualism, and uncertainty avoidance. The analysis yields noteworthy data, particularly on the impact of social support and individualism on Life Ladder ratings. Social support is positively and substantially connected with well-being, implying that higher levels of social support lead to greater happiness. Similarly, individualism has been found to have a positive effect on Life Ladder scores, implying that societies that value individuality tend to report better levels of well-being. In contrast, the data suggests that while healthy life expectancy at birth and uncertainty avoidance are highly associated with Life Ladder scores.
+
+The model's fit is robust, as indicated by the Multiple R-squared value of 0.8904, which indicates that the specified predictors account for about 89.04% of the variability in Life Ladder scores. This strong model fit is further reinforced by an Adjusted R-squared value of 0.8833, which accounts for the number of predictors. The F-statistic verifies the model's overall significance, with a very low p-value indicating a high correlation between the predictors and the Life Ladder scores. Despite the absence of statistical significance in the impact of Log GDP per capita on happiness, the findings highlight the critical role of social support and individualism in shaping a society's well-being.     
+
+#### 5-2 Hypothesis 1 Analysis
+
+Impact of Pandemic on Happiness: The happiness scores significantly decreased during the peak of the COVID-19 pandemic and showed signs of recovery in the post-pandemic phase.
+
+Wea create line chart  to visually represent the "Life Ladder" scores over time for four selected countries: India, Finland, China, and Switzerland. The data is subsetted to include only these countries, and the 'Year' variable is converted into a factor for proper plotting.
+
+```{r LineChart, echo=TRUE}
+subset_whr_cult_data <- whr_cult_data[whr_cult_data$Country %in% c("India", "Finland", "China", "Switzerland"),]
+subset_whr_cult_data$Year <- as.factor(subset_whr_cult_data$Year)
+
+
+flag_colors <- c("Finland" = "#003580", # Blue for Finland
+                 "India" = "#FF9933",   # Saffron for India
+                 "China" = "#FFDE00", # Green for Nigeria
+                 "Switzerland" = "#FF0000") # Red for Switzerland
+
+# Plotting
+p <- ggplot(subset_whr_cult_data, aes(x = Year, y = Life.Ladder, group = Country, color = Country)) + 
+  geom_line(size = 1) + # Size of the line
+  geom_point(aes(shape = Country), size = 3) + 
+  scale_color_manual(values = flag_colors) + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.title = element_blank(), 
+        legend.position = "bottom") + 
+  labs(title = "Life Ladder Score by Country and Year", 
+       x = "Year", 
+       y = "Life Ladder Score")
+print(p)
+
+
+
+```
+
+
+**Life Ladder Score:** It is defined ny the Gallup World Poll where they ask respondents to think of a ladder, with the best possible life for them being a 10 and the worst possible life being a 0.The life ladder score, often used as an indicator of national happiness, reveals intriguing trends when comparing data from China, Finland,India and Switzerland from 2018 onwards. Notably, Finlands scores remains remarkably stable over the years, which aligns with its reputation for high level of happiness among its population.
+
+
+Three distinct insights emerge from the graph:
+
+**1.Switzerland's Decline:** Since 2018, there has been a noticeable downward trajectory in Switzerland's Life Ladder score. This suggests a diminishing perception of well-being among its citizens, which could be attributed to various economic, social, or political factors that merit further investigation.
+
+**2.China's Increase:** Contrasting with Switzerland, China's Life Ladder score has been on an upward trend. This positive change indicates improvements in the factors that contribute to the citizens' overall happiness and warrants an analysis of the policies or circumstances that may have influenced this rise.
+
+**3.India's Fluctuation:** India presents a unique case where, despite having a Life Ladder score below 4, which is comparatively low, there was a significant spike during the year that coincided with the COVID-19 pandemic. This anomaly is particularly interesting as it suggests that the factors impacting the happiness scores in India may differ from global trends during this period and requires a deeper dive to understand the cultural or societal elements at play.
+
+Our initial hypothesis posited that the happiness scores would have significantly decreased during the peak of the COVID-19 pandemic, with a potential rebound in the post-pandemic phase. However, the data from the selected countries do not uniformly support this hypothesis. While some countries might exhibit this pattern, the complexities observed in the graph highlight that the impact of the pandemic on happiness scores may not be generalized across different nations.
+
+The varying trajectories of these scores during the pandemic period emphasize the need for a nuanced approach when analyzing the determinants of national happiness. It prompts us to consider a range of factors, from government response to the pandemic, economic resilience, social support networks, and cultural attitudes towards crises, which may influence a country's Life Ladder score during unprecedented times.
+
+We thought one factor could healthy life expectancy in relation with gdp per capita of country can also decide the happiness of the country.
+
+```{r}
+# Plotting GPD vs Life Expectancy
+# Create a ggplot object
+my_plot <-ggplot(subset_whr_cult_data, aes(x = Log.GDP.per.capita, 
+                          y = Healthy.life.expectancy.at.birth, 
+                          color = Country)) + 
+  geom_point() +
+  scale_x_log10() +
+  labs(title = "GDP Vs Healthy Life Expectancy",
+       x = "Log GDP per Capita",
+       y = "Healthy Life Expectancy at Birth")
+
+# Convert ggplot to plotly
+my_plotly_plot <- ggplotly(my_plot)
+
+# Show the interactive plot
+my_plotly_plot
+```
+
+**1.Switzerland's Decline:** Since 2018, there has been a noticeable downward trajectory in Switzerland's Life Ladder score. This suggests a diminishing perception of well-being among its citizens, which could be attributed to various economic, social, or political factors that merit further investigation.
+
+**2.China's Increase:** Contrasting with Switzerland, China's Life Ladder score has been on an upward trend. This positive change indicates improvements in the factors that contribute to the citizens' overall happiness and warrants an analysis of the policies or circumstances that may have influenced this rise.
+
+**3.India's Fluctuation:** India presents a unique case where, despite having a Life Ladder score below 4, which is comparatively low, there was a significant spike during the year that coincided with the COVID-19 pandemic. This anomaly is particularly interesting as it suggests that the factors impacting the happiness scores in India may differ from global trends during this period and requires a deeper dive to understand the cultural or societal elements at play.
+
+Our initial hypothesis posited that the happiness scores would have significantly decreased during the peak of the COVID-19 pandemic, with a potential rebound in the post-pandemic phase. However, the data from the selected countries do not uniformly support this hypothesis. While some countries might exhibit this pattern, the complexities observed in the graph highlight that the impact of the pandemic on happiness scores may not be generalized across different nations.
+
+The varying trajectories of these scores during the pandemic period emphasize the need for a nuanced approach when analyzing the determinants of national happiness. It prompts us to consider a range of factors, from government response to the pandemic, economic resilience, social support networks, and cultural attitudes towards crises, which may influence a country's Life Ladder score during unprecedented times.
+
+We thought one factor could healthy life expectancy in relation with gdp per capita of country can also decide the happiness of the country.
+ happiness score for India would be various challenges that it faces for economic development but on the other hand the people suffer high costs at living expenses. 
+
+
+
+----------------------------------------
+
+#### 5-3 Hypothesis 2  Analysis (Chapter of Choice)
+
+Countries with high scores in certain cultural dimensions (like Collectivism or Uncertainty Avoidance) experienced a different impact on their happiness scores due to their unique responses to the pandemic. 
+
+**Power Distance:**This is the extent to which a society accepts that power is unequally distributed among its members. Hofstede used the power distance index (PDI) to represent the level of social power distance. Countries with a higher level of power distance tend to centralize power and attach importance to tradition, authority, and social class.
+
+**Individualism:**Hofstede used the individualism index score (IDV) to distinguish the relationship; those with higher scores belong to individualistic countries, and the relationship between people is loose. A low scorer relates to a collectivist state, where each member forms a solidarity with other members, protects them for life, and takes care of themselves and their family in exchange for their loyalty
+
+**Masculinity vs. Feminity:**This is the degree to which gender roles and expectations are differentiated in different countries. The masculine style emphasizes the traditional concept that masculinity should be valued. Hofstede used the masculinity index (MAS) to show that a man may have feminine behavior, and a woman may also have masculine behavior, which means that their behavior differs from general social behavior.
+
+**Uncertainity Avoidance:**This is the level of anxiety which people within a society feel about the uncertainty of the future. Hofstede used the society’s tolerance for ambiguity as an index to measure the uncertainty avoidance index (UAI). Reducing uncertainty can calm people’s minds.
+
+**Long Term Orientation:**Confucian ideological dynamism refers to the difference between long-term and short-term tendencies in life, measured by long-term tendencies (LTO).  Long-term-oriented values are future-oriented and relatively dynamic; short-term-oriented values are related to the past and present and are relatively static.
+
+**Indulgence:**The extent to which members of society accept their basic needs and desires to enjoy life. Indulgence represents the basic normal desire to enjoy the pleasures of life, allowing unrestrained satisfaction, which is an unrestricted society; constraints reflect the need to control the enjoyment of life and manage with strict social norms, which is a restricted society.
+
+To address our hypothesis on how cultural dimensions like Collectivism (which can be inferred from the Individualism score, as lower scores in Individualism imply higher Collectivism) or Uncertainty Avoidance might have influenced the happiness scores of India, Finland, Switzerland, and China during the pandemic, we'll conduct an analysis focusing on these specific countries and cultural dimensions. We'll compare the changes in happiness scores from the years immediately preceding the pandemic to the years during and possibly after the pandemic, to see if there's a correlation with their cultural dimensions.
+
+**_Shiny Application (Chapter of Choice)_**
+
+With the help of Shiny application we  analyze the impact of cultural dimensions on happiness in response to the pandemic for India, Switzerland, Finland, and China. 
+```{r ShinyApplications, warning=FALSE, include=FALSE}
+# Shiny UI
+ui <- fluidPage(
+  titlePanel("World Happiness and Cultural Dimensions"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("selectedCountry", "Select a Country:",
+                  choices = unique(whr_cult_data$Country))
+    ),
+    mainPanel(
+      plotOutput("happinessPlot"),
+      tableOutput("culturalDimensions")
+    )
+  )
+)
+
+# Shiny server
+server <- function(input, output) {
+  output$culturalDimensions <- renderTable({
+    # Filter the dataset for the selected country and extract cultural dimensions
+    selected_data <- whr_cult_data %>%
+      filter(Country == input$selectedCountry) %>%
+      select(Country, Power.Distance, Individualism, Masculinity.and.Feminity, Uncertainty.Avoidance, Long.Term.Orientation, Indulgence) %>%
+      unique()
+    
+    if (nrow(selected_data) > 0) {
+      # Remove non-numeric columns 
+      dimensions_data <- selected_data[,-1]
+      
+      # Identify highest and lowest dimensions
+      max_val <- max(dimensions_data)
+      min_val <- min(dimensions_data)
+      
+      # Replace the values with HTML span tags for highlighting
+      # Loop over each value in the dimensions_data to apply formatting
+      for (i in seq_along(dimensions_data)) {
+        if (dimensions_data[i] == max_val) {
+          dimensions_data[i] <- paste0('<span style="color:green;">', dimensions_data[i], ' (Highest)</span>')
+        } else if (dimensions_data[i] == min_val) {
+          dimensions_data[i] <- paste0('<span style="color:red;">', dimensions_data[i], ' (Lowest)</span>')
+        }
+      }
+      
+      # Bind the country name back to the modified dimensions data
+      final_data <- cbind(Country = selected_data$Country, dimensions_data)
+    } else {
+      final_data <- selected_data
+    }
+    
+    # Return the modified data for rendering
+    final_data
+  }, sanitize.text.function = function(x) x) # Allow HTML
+  
+  output$happinessPlot <- renderPlot({
+    # Filter the dataset for the selected country
+    country_data <- whr_cult_data %>%
+      filter(Country == input$selectedCountry)
+    
+    # Plot the happiness scores over the years
+    ggplot(country_data, aes(x = Year, y = Life.Ladder, group = 1)) +
+      geom_line() +
+      geom_point() +
+      labs(title = paste("Happiness Scores Over the Years -", input$selectedCountry),
+           x = "Year", y = "Life Ladder Score") +
+      theme_minimal()
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+![**Shiny Application**](C:/Users/kokit/OneDrive - Hochschule Luzern/R_Bootcamp/Code/ShinyApplication.png")
+
+ Let's summarize the findings:
+
+**China:** With a moderate level of Individualism (43) and low Uncertainty Avoidance (30), China experienced an increase in happiness scores during the pandemic (2020) compared to pre-pandemic years, with a peak in 2020 (5.771) and slight fluctuations afterward.
+
+**Finland:** High Individualism (75) and moderate Uncertainty Avoidance (59) characterize Finland, which showed a relatively stable and high level of happiness throughout the period, with a slight increase in 2020 (7.889).
+
+**India:** Characterized by low Individualism (24) and moderate Uncertainty Avoidance (40), India showed a significant increase in happiness in 2020 (4.224) from a low in 2019 (3.249), with variations following.
+
+**Switzerland:** With very high Individualism (79) and moderate Uncertainty Avoidance (58), Switzerland's happiness scores slightly decreased during the pandemic years compared to pre-pandemic levels.
+
+To address our hypothesis, we can observe that:
+
+Countries with higher Individualism (Finland and Switzerland) maintained relatively high happiness scores, with minor fluctuations during the pandemic.
+Countries with lower Individualism (India) and moderate to low Uncertainty Avoidance scores (China and India) experienced varied impacts, with India showing a notable increase in happiness scores during the pandemic year (2020) despite starting from a lower base.These observations suggest that cultural dimensions may indeed play a role in how countries responded to the pandemic, influencing their happiness scores. High Individualism countries like Finland maintained high happiness levels, possibly due to a strong social support system and trust in government measures. Conversely, the significant rise in India's happiness scores during the pandemic could reflect complex socio-cultural and economic factors beyond the measured cultural dimensions.
+
+--------------------------------------------------------------------------------
+
+#### 5-4 Hypothesis 3 Analysis
+
+Correlation between COVID-19 Severity and Happiness Scores: There is a negative correlation between the severity of COVID-19 in a country (measured by infection and death rates) and its happiness score.
+
+To assess the hypothesis regarding the correlation between COVID-19 severity and happiness scores, we proceed with the following steps:
+
+1. Aggregate the COVID-19 data to obtain total cases and deaths for each country, focusing on the relevant year(s) for comparison with the happiness scores.
+2. Merge the COVID-19 aggregated data with the happiness scores based on country and year.
+3. Calculate the correlation between COVID-19 severity indicators (such as cumulative cases and deaths) and the happiness score.
+
+```{r covidhappinessdatamerge, echo=TRUE}
+# Aggregate COVID-19 data by country and year
+covid_aggregated <- covid_data %>%
+  group_by(Country, Year) %>%
+  summarise(Total_Cases = max(Cumulative_cases), 
+            Total_Deaths = max(Cumulative_deaths))
+
+# Merge the COVID-19 data with happiness scores
+merged_data <- merge(covid_aggregated, whr_cult_data, by = c("Country", "Year"))
+
+```
+
+Now we have merged the data. Now we filter the data to show the correlation for each country.
+
+```{r Correlations of Countries, echo=TRUE}
+# Filter for specific countries
+countries_of_interest <- c("India", "China", "Switzerland", "Finland")
+filtered_data <- merged_data %>% 
+  filter(Country %in% countries_of_interest & Total_Cases > 0 & Total_Deaths > 0)
+
+# Calculate and print the correlation for each country
+for (country in countries_of_interest) {
+  cat("Correlation for", country, ":\n")
+  
+  country_data <- filtered_data %>% filter(Country == country)
+  
+  # Check if there are enough data points and no NA values
+  if (sum(!is.na(country_data$Total_Cases) & !is.na(country_data$Life.Ladder)) > 1) {
+    correlation_cases_happiness <- cor(country_data$Total_Cases, country_data$Life.Ladder, use = "complete.obs")
+    cat("Total Cases vs. Happiness Score:", correlation_cases_happiness, "\n")
+  } else {
+    cat("Not enough data to calculate Total Cases vs. Happiness Score\n")
+  }
+  
+  if (sum(!is.na(country_data$Total_Deaths) & !is.na(country_data$Life.Ladder)) > 1) {
+    correlation_deaths_happiness <- cor(country_data$Total_Deaths, country_data$Life.Ladder, use = "complete.obs")
+    cat("Total Deaths vs. Happiness Score:", correlation_deaths_happiness, "\n\n")
+  } else {
+    cat("Not enough data to calculate Total Deaths vs. Happiness Score\n\n")
+  }
+}
+```
+
+For three of the four countries analyzed (India, Switzerland, and Finland), the hypothesis holds true with strong negative correlations observed. This indicates that in these countries, higher COVID-19 severity aligns with lower happiness scores.
+ 
+**In Detail**
+
+**1- India:** Shows a strong negative correlation between both COVID-19 case numbers (-0.643) and death rates (-0.758) with happiness scores. This suggests that as the severity of COVID-19 increased in India, the happiness scores tended to decrease significantly.
+
+**2- China:** Displays a very weak positive correlation for both cases (0.038) and deaths (0.054) with happiness scores. This result is not in line with the hypothesis and suggests that there was no significant relationship between COVID-19 severity and happiness scores in China during the period analyzed.
+
+**3- Switzerland:** Exhibits a very strong negative correlation between COVID-19 case numbers (-0.998) and death rates (-0.897) with happiness scores, which strongly supports the hypothesis that higher COVID-19 severity is associated with lower happiness scores.
+
+**4- Finland:** Also demonstrates a strong negative correlation between both COVID-19 case numbers (-0.917) and death rates (-0.886) with happiness scores, reinforcing the hypothesis for this country.
+
+```{r allcountriesplot, echo=TRUE, message=FALSE, warning=FALSE}
+# Filter data for the years 2018 to 2022
+filtered_data <- whr_cult_data %>%
+  filter(Year >= 2018 & Year <= 2022)
+
+# Create an interactive plot using plot_ly with customized styling
+plot_ly(filtered_data, x = ~Year, y = ~Life.Ladder, color = ~Country, type = 'scatter', mode = 'lines') %>%
+  layout(title = "Happiness Index Trends (2018-2022) by Country",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Happiness Index"),
+         showlegend = TRUE) %>%
+  style(marker = list(size = 6), line = list(width = 2)) %>%
+  colorbar(title = "Country")
+
+```
+
+
+Notably, from the above plot, countries like India, Egypt, and Ghana experienced a dip in happiness scores during the pandemic. 
+Conversely, countries such as Finland and Australia exhibited a relatively stable Happiness Index, showing minimal fluctuations during the same time frame. This stability implies a resilience in maintaining higher happiness levels despite the challenges posed by the pandemic
+.nterestingly, Switzerland, although generally maintaining a high happiness score, displayed a notable dip in the year 2020, indicating a unique response to the pandemic compared to its consistent performance in other years.
+
+The results of the correlation can not give a complete answer as the variation in the strength and direction of the correlation across different countries could be influenced by several factors including the effectiveness of public health responses, economic impact, social support systems and cultural differences in coping with the pandemic. Besides that the strong negative correlations in some countries suggest that managing the severity of a pandemic could be essential not just for public health but also for maintaining the well being and happiness of population.
+
+--------------------------------------------------------------------------------
+
+
+#### 6- Use of GENAI 
+       
+In the course of our project, ChatGPT played a vital role in shaping our hypotheses and gaining valuable insights. Here's how ChatGPT assisted us:
+
+**1.Hypothesis Formulation:**
+Natural Language Understanding: ChatGPT's natural language processing capabilities facilitated the formulation of our hypotheses. By engaging in conversational interactions with the model, we refined our ideas and translated them into well-defined hypotheses. The model's ability to understand and respond to nuanced queries helped us articulate our research questions effectively.
+
+**2.Exploratory Data Analysis (EDA):**
+Querying and Refinement: ChatGPT served as a conversational assistant during the exploratory data analysis phase. We interacted with the model to refine our queries, seeking guidance on specific aspects of the dataset and potential variables to consider. This iterative process assisted us in narrowing down our focus and identifying key variables for analysis.
+Insight Generation:
+
+**3.Conceptualizing Plots and Visualizations:**
+ChatGPT's creative text generation capabilities were instrumental in conceptualizing the plots and visualizations for our project. By describing our data and hypotheses in natural language, the model provided inspiration for effective ways to represent our findings visually. This collaborative process with ChatGPT streamlined the creation of insightful visualizations.
+
+**4.Communication of Results:**
+Narrative Assistance: ChatGPT played a role in refining the narrative of our project. By generating clear and coherent explanations.This improved the overall clarity of our project presentation.
+
+
+
+#### 7- Conclusion
+
+
+**1.Diverse Impacts of the Pandemic:** Our analysis reveals that the impact of the COVID-19 pandemic on national happiness is varied and varies across countries. While some nations experienced a dip in happiness scores during the pandemic, others, like China and India, witnessed distinct trajectories, challenging the uniformity of our initial hypothesis. This suggests that factors influencing happiness during unprecedented times are complex and multifaceted.
+
+**2.Cultural Dynamics Matter:** Cultural dimensions play a crucial role in shaping a country's response to the pandemic and subsequent effects on happiness. Examining the cases of China, Finland, India, and Switzerland, we observed that Individualism and Uncertainty Avoidance influenced how these nations navigated the challenges, showcasing the importance of cultural differences in understanding well-being disparities.
+
+**3.Statistical Insights:** Our regression analysis identified Social Support and Perceptions of Corruption as statistically significant predictors of happiness scores. This underscores the significance of social cohesion and governance transparency in shaping citizens' life satisfaction. While other variables like Log GDP per Capita and Freedom to Make Life Choices did not exhibit statistical significance, the overall model displayed a high fit, explaining approximately 91.65% of the variance in life satisfaction.
+
+In conclusion, our project underscores the need for a holistic and culturally informed approach when studying the dynamics of national happiness. The pandemic's impact, together with cultural dimensions and socio-economic factors, paints a diverse picture of well-being across the globe. As we navigate unprecedented challenges, acknowledging and understanding these complexities becomes crucial for policymakers and leaders seeking to enhance the quality of life for their citizens.
+
+#### 8- Sources
+
+1.World Happiness Report: https://happiness-report.s3.amazonaws.com/2022/DataForTable2.1.xls
+
+2.Hofstede Cultural Insights: https://www.hofstede-insights.com/country-comparison-tool?countries=switzerland
+
+3.COVID Data : https://www.kaggle.com/datasets/imdevskp/corona-virus-report
+
+```{r}
+sessionInfo()
+```
+
+
